@@ -1,54 +1,67 @@
 # build a web scraper in python
 import requests
 from bs4 import BeautifulSoup
-
 import markdownify
-import urllib.request
-import urllib.parse
-import urllib.error
-import re
-import os
+import urllib.request, urllib.parse, urllib.error
+import re, os, sys,argparse
+
 from dotenv import load_dotenv
 
-class Post:
-    def __init__(self, url):
-        self.url = url
-        self.title = None
-        self.date = None
-        self.content = None
-        self.images = []
-        self.previews = []
 
-    def __str__(self):
-        return f"{self.title}\n{self.date}\n{self.content}"
-    
 def main():
-    # load blog url from .env
-    # Load environment variables from .env file
-    load_dotenv()
+    # default values
+    target_directory = "md"
+    max_pages = 3
+    blog_url = ""
 
-    # Access the secret parameter
-    blog_url = os.getenv("blog_url")
+    # add three optional arguments, using argparse
+    # -t target_directory where md files will be stored,
+    # -m max_pages maximum number of pages to scrap,
+    # -u blog_url
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--target_directory", help="target directory where md files will be stored")
+    parser.add_argument("-m", "--max_pages", type=int, help="maximum number of pages to scrap")
+    parser.add_argument("-u", "--blog_url", help="blog url to scrap")
+    args = parser.parse_args()
+    if args.target_directory:
+        target_directory = args.target_directory
+    if args.max_pages:
+        max_pages = args.max_pages
+    if args.blog_url:
+        blog_url = args.blog_url
+        
+    if blog_url == "":
+        # load blog url from .env
+        # Load environment variables from .env file
+        load_dotenv()
+
+        # Access the secret parameter
+        blog_url = os.getenv("blog_url")
+        if not blog_url:
+            print("blog_url not found in .env file")
+            sys.exit(1)
+    
     print(f"Backuping: {blog_url}")
-
+    print(f"target_directory: {target_directory}")
+    print(f"max_pages: {max_pages}")
 
     # create a md directory if it doesn't exist
-    if not os.path.exists('md'):
-        os.makedirs('md')
-        print("Created md directory")
+    if not os.path.exists(target_directory):
+        os.makedirs(target_directory)
+        print(f"Created md directory: {target_directory}")
 
-    maxpage = 1
+    
     nextpage = blog_url
     allurls = set()
-    while nextpage and maxpage > 0:
-        print(f"{maxpage=}, {nextpage=}")
+    while nextpage and max_pages > 0:
+        print(f"{max_pages=}, {nextpage=}")
         hrefs, nextpage = get_posts_url_from_page(nextpage)
         for h in hrefs:
             if h not in allurls:
                 allurls.add(h)
                 print(f"New url: {h}")
         print("----")
-        maxpage -= 1
+        max_pages -= 1
 
     print(f"Retreived : {len(allurls)=}")
     print("-------\n")
@@ -57,8 +70,10 @@ def main():
     for url in allurls:
         extract_post(url,stats)
 
-    for s in stats:
-        print(f"{stats[s]['title']}\n{stats[s]['url']}\n{stats[s]['path']}{stats[s]['filename']}\n")
+    if stats:
+        max_length = max(len(str(s)) for s in stats)
+        for s in sorted(stats):
+            print(f"{s:{max_length}d} : {stats[s]['url']}\n{stats[s]['path']}{stats[s]['filename']} - images {stats[s]['images']}\n")
 
 #
 # Returns all posts urls, and the next page blog as a tuple
@@ -90,11 +105,7 @@ def extract_post(url,stats):
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
     title = soup.title.text # gets you the text of the <title>(...)</title>
-    id = len(stats)
-    stats[id] = {}
-    stats[id]['url'] = url
-    stats[id]['title'] = title
-
+    
     # get the filename from the link, and remove extension
     filename = url.split('/')[-1]
     # replace extension with .md
@@ -111,6 +122,10 @@ def extract_post(url,stats):
         print(f"Path {path} already exists, skipping...")
         return
     
+    id = len(stats)
+    stats[id] = {}
+    stats[id]['url'] = url
+    stats[id]['title'] = title
     stats[id]['path'] = path
     stats[id]['filename'] = filename
     # Get 'entry-content' from the html
@@ -153,6 +168,6 @@ def extract_post(url,stats):
         f.write(md_text)
         
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     main()
 
