@@ -33,12 +33,11 @@ def main():
 
 
     # create a md directory if it doesn't exist
-
     if not os.path.exists('md'):
         os.makedirs('md')
         print("Created md directory")
 
-    maxpage = 2
+    maxpage = 1
     nextpage = blog_url
     allurls = set()
     while nextpage and maxpage > 0:
@@ -51,15 +50,15 @@ def main():
         print("----")
         maxpage -= 1
 
-    
-    print("-------\n")
-    print(f"{len(allurls)=}")
-    print(allurls)
+    print(f"Retreived : {len(allurls)=}")
     print("-------\n")
 
+    stats = dict()
     for url in allurls:
-        get_post(url)
-        break
+        extract_post(url,stats)
+
+    for s in stats:
+        print(f"{stats[s]['title']}\n{stats[s]['url']}\n{stats[s]['path']}{stats[s]['filename']}\n")
 
 #
 # Returns all posts urls, and the next page blog as a tuple
@@ -87,32 +86,36 @@ def get_posts_url_from_page(url):
 
 
 
-def get_post(url):
+def extract_post(url,stats):
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
     title = soup.title.text # gets you the text of the <title>(...)</title>
-    print(f"url: {url}")
-    print(f"title: {title}")
-
+    id = len(stats)
+    stats[id] = {}
+    stats[id]['url'] = url
+    stats[id]['title'] = title
 
     # get the filename from the link, and remove extension
     filename = url.split('/')[-1]
     # replace extension with .md
     filename = filename.replace('.html', '.md')
-    print("\n\n")
-    print(f"Filename: {filename}")
 
     # get url path and create directories
-    path = "md/"+"/".join(url.split('/')[3:-1])
+    path = "md/"+"/".join(url.split('/')[3:])
+    # remove the extension from the path. Extension can be .html, .htm 
+    path = path.replace('.html', '').replace('.htm', '') + "/"
     if not os.path.exists(path):
         os.makedirs(path)
         print(f"Created {path}")
+    else:
+        print(f"Path {path} already exists, skipping...")
+        return
     
-
+    stats[id]['path'] = path
+    stats[id]['filename'] = filename
     # Get 'entry-content' from the html
     entry_content = soup.find(class_='entry-content')
-    print(entry_content.get_text)
-    print("\n\n")
+
     # entry_content is an html div
     # convert it to markdown
     # use a library like markdownify
@@ -129,26 +132,24 @@ def get_post(url):
 
     # search images, images are [![](preview_url)]](fullres_url)
     images = re.findall(r'\[!\[\]\(.*?\)\]\(.*?\)', md_text)
+    stats[id]['images'] = len(images)
+
     # download the images
     for image in images:
-        print(image)
         preview_url = re.search(r'\[!\[\]\((.*?)\)\]\(.*?\)', image).group(1)
         fullres_url = re.search(r'\[!\[\]\(.*?\)\]\((.*?)\)', image).group(1)
         # download the preview image
         preview_name = "small_" + preview_url.split('/')[-1]
-        urllib.request.urlretrieve(preview_url, 'md/'+preview_name)
+        urllib.request.urlretrieve(preview_url, path+preview_name)
         # download the full res image
         fullres_name = fullres_url.split('/')[-1]
-        urllib.request.urlretrieve(fullres_url, 'md/'+fullres_name)
+        urllib.request.urlretrieve(fullres_url, path+fullres_name)
         # replace the links in the markdown
-        md_text = md_text.replace(preview_url, 'md/'+preview_name)
-        md_text = md_text.replace(fullres_url, 'md/'+fullres_name)
-
-    print(md_text)
-    print("\n\n")
+        md_text = md_text.replace(preview_url, preview_name)
+        md_text = md_text.replace(fullres_url, fullres_name)
 
     # save the markdown to a file
-    with open('md/'+filename, 'w') as f:
+    with open(path+filename, 'w') as f:
         f.write(md_text)
         
 
