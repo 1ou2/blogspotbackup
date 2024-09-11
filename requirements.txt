@@ -3,3 +3,5 @@ lxml
 requests
 markdownify
 python-dotenv
+markdown
+jinja2
