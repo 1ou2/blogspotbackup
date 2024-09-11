@@ -7,6 +7,15 @@ import re, os, sys,argparse
 
 from dotenv import load_dotenv
 
+def is_image_url(url):
+    # Define a regular expression pattern to match common image file extensions
+    image_extensions = r'\.(jpg|jpeg|png|gif|bmp|heic)$'
+    
+    # Use the re.search() function to check if the URL matches the pattern
+    if re.search(image_extensions, url, re.IGNORECASE):
+        return True
+    else:
+        return False
 
 
 def get_urls_from_file(file_path):
@@ -16,8 +25,8 @@ def get_urls_from_file(file_path):
 
 def main():
     # default values
-    target_directory = None
-    urls_file = "maroc2.txt"
+    target_directory = ""
+    urls_file = "test.txt"
     max_urls = 10
 
     # add three optional arguments, using argparse
@@ -48,6 +57,8 @@ def main():
     if args.max_urls:
         max_urls = args.max_urls
         
+
+    target_directory = "ttt"
     print(f"Backuping: {urls_file}")
     print(f"target_directory: {target_directory}")
     print(f"max_urls: {max_urls}")
@@ -72,7 +83,7 @@ def main():
     if stats:
         max_length = max(len(str(s)) for s in stats)
         for s in sorted(stats):
-            print(f"{s:{max_length}d} : {stats[s]['date']} {stats[s]['path']}{stats[s]['filename']} - images {stats[s]['images']}")
+            print(f"{s:{max_length}d} : {stats[s]['date']} {stats[s]['path']}{stats[s]['filename']}")
 
 
 def extract_post(url,stats,mddir="md"):
@@ -171,35 +182,39 @@ def extract_post(url,stats,mddir="md"):
                 # add a line break after each comment
                 md_text += "\n"
 
-    print(f"----\n{md_text}\n----")
+    
+    print(f"{md_text}")
+    # Regular expression pattern to match URLs starting with "https://" until we get to a )
+    # notice the +? : which requires the match to be non greedy and stop at the first )
+    pattern = r'(https?://[^\s]+?)\)'
 
-    # the markdown contains links to images like :
-    # [![](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXza-U5b5yvxYQ/s320/IMG_3765.jpg)](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEGLza-U5b5yvxYQ/s1154/IMG_3765.jpg)
-    #
-    # search images, images are [![](https://preview_url)]](https://fullres_url)
-    images = re.findall(r'\[!\[\]\(.*?\)\]\(.*?\)', md_text)
-    stats[id]['images'] = len(images)
-
-    # download the images
-    for image in images:
-        preview_url = re.search(r'\[!\[\]\((.*?)\)\]\(.*?\)', image).group(1)
-        fullres_url = re.search(r'\[!\[\]\(.*?\)\]\((.*?)\)', image).group(1)
-        print(f"****\n{preview_url}\n{fullres_url}\n****")
-        # check if url ends with /, if so, remove it
-        if preview_url.endswith('/'):
-            preview_url = preview_url[:-1]
-        if fullres_url.endswith('/'):
-            fullres_url = fullres_url[:-1]
-
-        # download the preview image
-        preview_name = "small_" + preview_url.split('/')[-1]
-        urllib.request.urlretrieve(preview_url, path+preview_name)
-        # download the full res image
-        fullres_name = fullres_url.split('/')[-1]
-        urllib.request.urlretrieve(fullres_url, path+fullres_name)
-        # replace the links in the markdown with local path
-        md_text = md_text.replace(preview_url, preview_name)
-        md_text = md_text.replace(fullres_url, fullres_name)
+    # Find all matches
+    urls = re.findall(pattern, md_text)
+    images = []
+    downloaded = []
+    # Print the URLs
+    for url in urls:
+        print(f"URL: {url}")
+        if url in downloaded:
+            continue
+        # some URL are very long and end with a /
+        if url.endswith('/') or is_image_url(url):
+            if url.endswith('/'):
+                newurl = url[:-1]
+                image_name = newurl.split('/')[-1] + ".jpg"
+            else:
+                image_name = url.split('/')[-1]
+            if len(image_name) > 30:
+                # get last 30 characters
+                image_name = image_name[-30:]
+            if image_name in images:
+                image_name = "big_" + image_name
+            images.append(image_name)
+            urllib.request.urlretrieve(url, path + image_name)
+            downloaded.append(url)
+            md_text = md_text.replace(url, image_name)
+        else:
+            print(f"URL NOT IMAGE: {url}")
 
     # save the markdown to a file
     with open(path+filename, 'w') as f:
