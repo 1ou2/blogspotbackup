@@ -23,6 +23,27 @@ def get_urls(blog_url,max_pages):
     print(f"Retreived : {len(allurls)=}")
     print("-------\n")
 
+def get_first_post_url():
+    load_dotenv()
+    first_post_url = ""
+    blog_url = os.getenv("blog_url")
+    if not blog_url:
+        print("blog_url not provided")
+        sys.exit(1)
+
+    urls, nextpage = get_posts_url_from_page(blog_url)
+
+    for url in urls:
+        page = requests.get(url)
+        soup = BeautifulSoup(page.content, 'html.parser')
+        previous_page = soup.find_all(class_='blog-pager-newer-link')
+        if not previous_page:
+            print(f"found first post: {url}")
+            return url
+        else:
+            print(f"discarded {url}")
+    
+    return None
 #
 # Returns all posts urls, and the next page blog as a tuple
 # [url1, url2, ...], next_page_url
@@ -51,7 +72,7 @@ def get_ordered_posts(firstpost_url,max=None):
     posts = []
     nextpost = firstpost_url
 
-    while nextpost and (max ==None or max >=0):
+    while nextpost and (max ==None or max >0):
         if max != None:
             max = max -1
         if len(posts) % 10 == 0:
@@ -88,8 +109,12 @@ def main():
         first_post_url = os.getenv("first_post_url")
         if not first_post_url:
             print("first_post_url not provided")
-            sys.exit(1)
-
+            first_post_url = get_first_post_url()
+            if not first_post_url:
+                print("Could not find first post url")
+                sys.exit(1)
+    output = "sample.txt"      
+    max_posts = 5
     print(f"Crawling from {first_post_url} with max {max_posts}")
     posts = get_ordered_posts(first_post_url,max_posts)
     print(f"Crawled : {len(posts)}")
