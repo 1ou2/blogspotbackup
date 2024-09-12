@@ -26,6 +26,7 @@ def copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir):
         # Résoudre le chemin de l'image dans l'article
         original_img_path = os.path.join(article_img_dir, img_src)
 
+
         if os.path.exists(original_img_path):
             # Créer un nom d'image unique pour éviter les collisions
             unique_img_name = os.path.basename(src_file_path).replace('.html', '') + '_' + os.path.basename(img_src)
@@ -48,48 +49,6 @@ def copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir):
 
     print(f"Liens d'images mis à jour et images copiées pour : {html_file_path}")
 
-def copy_images_and_update_links2(src_file_path, html_file_path, assets_img_dir):
-    """
-    Copie les images du répertoire de l'article vers le répertoire /assets/images
-    et met à jour les liens vers ces images dans le fichier HTML.
-    """
-    # Lire le contenu HTML généré
-    with open(html_file_path, 'r', encoding='utf-8') as f:
-        html_content = f.read()
-
-    # Parser le contenu HTML avec BeautifulSoup pour trouver les images
-    soup = BeautifulSoup(html_content, 'html.parser')
-    img_tags = soup.find_all('img')
-
-    # Le répertoire où sont les images d'origine (dans le même répertoire que le markdown)
-    article_img_dir = os.path.dirname(src_file_path)
-
-    for img in img_tags:
-        img_src = img['src']
-        # Résoudre le chemin de l'image dans l'article
-        original_img_path = os.path.join(article_img_dir, img_src)
-
-        if os.path.exists(original_img_path):
-            # Créer un nom d'image unique pour éviter les collisions
-            unique_img_name = os.path.basename(src_file_path).replace('.html', '') + '_' + os.path.basename(img_src)
-
-            # Chemin de destination dans /assets/images/
-            new_img_path = os.path.join(assets_img_dir, unique_img_name)
-
-            # Copier l'image vers /assets/images/
-            shutil.copy2(original_img_path, new_img_path)
-
-            # Mettre à jour l'attribut 'src' dans l'image
-            img['src'] = f'../../assets/images/{unique_img_name}'
-        else:
-            print(f"Image non trouvée : {original_img_path}")
-
-    # Écrire le contenu HTML modifié
-    with open(html_file_path, 'w', encoding='utf-8') as f:
-        f.write(str(soup))
-
-    print(f"Liens d'images mis à jour et images copiées pour : {html_file_path}")
-
 
 def process_articles(content_dir, html_dir, assets_img_dir):
     """
@@ -108,7 +67,8 @@ def process_articles(content_dir, html_dir, assets_img_dir):
                 
                 # Correspondre le chemin HTML de sortie avec le chemin markdown
                 relative_path = os.path.relpath(root, content_dir)
-                html_articledir = os.path.join(html_dir, "articles")
+                #html_articledir = os.path.join(html_dir, "articles")
+                html_articledir = os.path.join(html_dir, relative_path)
                 os.makedirs(html_articledir, exist_ok=True)
 
                 # copy hml file in html dir
@@ -151,7 +111,7 @@ def generate_html_article(md_file_path, output_dir):
 
     # Extraire les informations importantes des métadonnées
     title = meta_data.get('title', 'Titre de l\'article')
-    collection = meta_data.get('collection', 'Autre')
+    collection = meta_data.get('tags', 'Autre')
     date = meta_data.get('date', 'Date inconnue')
 
     # Générer le template HTML pour l'article
@@ -211,14 +171,20 @@ def generate_html_article(md_file_path, output_dir):
 
     print(f"Article HTML généré : {output_file_path}")
 
-# Exemple d'utilisation
-md_file_path = "/home/gabriel/dev/blogspotbackup/md/2023/08/03/01-quito-0208/quito-0208.md"
-output_dir = '/home/gabriel/dev/blogspotbackup/blog/content/articles/'
-generate_html_article(md_file_path, output_dir)
+if __name__ == "__main__":
+    blog_dir = 'blog'
+    # clean-up : remove html dir
+    if os.path.exists(blog_dir):
+        shutil.rmtree(blog_dir)
+    output_dir = './blog/content/articles/'
+    for root, dirs, files in os.walk("md"):
+        for file in files:
+            if file.endswith('.md'):
+                md_file_path = os.path.join(root, file)
+                generate_html_article(md_file_path, output_dir)
 
-# Exemple d'utilisation
-content_dir = './blog/content'
-html_dir = './blog/html'
-assets_img_dir = './blog/assets/images'
+    content_dir = './blog/content'
+    html_dir = './blog/html'
+    assets_img_dir = './blog/assets/images'
 
-process_articles(content_dir, html_dir, assets_img_dir)
+    process_articles(content_dir, html_dir, assets_img_dir)
