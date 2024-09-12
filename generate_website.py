@@ -5,11 +5,13 @@ from datetime import datetime
 from jinja2 import Template
 
 class Post:
-    def __init__(self, title, date, content, images):
+    def __init__(self, title, date, source_path,content, images):
         self.title = title
         self.date = date
+        self.source_path = source_path
         self.content = content
         self.images = images
+        self.year, self.month, self.day = date.split("-")
 
 def parse_markdown_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -19,13 +21,12 @@ def parse_markdown_file(file_path):
     html_content = md.convert(content)
     
     title = md.Meta.get('title', ['Untitled'])[0]
-    date_str = md.Meta.get('date', [os.path.basename(os.path.dirname(file_path))])[0]
-    date = datetime.strptime(date_str, "%Y-%m-%d")
+
     
-    return title, date, html_content
+    return title, html_content
 
 def get_images(folder_path):
-    return [f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+    return [f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif',".heic"))]
 
 def generate_website(source_dir, output_dir):
     posts = []
@@ -36,31 +37,32 @@ def generate_website(source_dir, output_dir):
             for month in os.listdir(year_path):
                 month_path = os.path.join(year_path, month)
                 if os.path.isdir(month_path):
-                    
-
-
-                    for folder in os.listdir(month_path):
-                        folder_path = os.path.join(month_path, folder)
-                        if os.path.isdir(folder_path):
-                            md_file = next((f for f in os.listdir(folder_path) if f.endswith('.md')), None)
-                            if md_file:
-                                md_path = os.path.join(folder_path, md_file)
-                                title, date, content = parse_markdown_file(md_path)
-                                images = get_images(folder_path)
-                                posts.append(Post(title, date, content, images))
+                    for day in os.listdir(month_path):
+                        day_path = os.path.join(month_path, day)
+                        for folder in os.listdir(day_path):
+                            folder_path = os.path.join(day_path, folder)
+                            if os.path.isdir(folder_path):
+                                md_file = next((f for f in os.listdir(folder_path) if f.endswith('.md')), None)
+                                if md_file:
+                                    md_path = os.path.join(folder_path, md_file)
+                                    date = f"{year}-{month}-{day}"
+                                    title, content = parse_markdown_file(md_path)
+                                    images = get_images(folder_path)
+                                    posts.append(Post(title, date, folder_path,content, images))
 
     # Sort posts by date
-    posts.sort(key=lambda x: x.date, reverse=True)
+    #posts.sort(key=lambda x: x.date, reverse=True)
 
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
     # Copy images
     for post in posts:
-        post_dir = os.path.join(output_dir, post.date.strftime("%Y-%m-%d"))
-        os.makedirs(post_dir, exist_ok=True)
+        src_dir = post.source_path
+        dst_dir = os.path.join(output_dir, post.year, post.month, post.day, src_dir.split('/')[-1])
+        os.makedirs(dst_dir, exist_ok=True)
         for image in post.images:
-            shutil.copy2(os.path.join(source_dir, post.date.strftime("%Y/%m"), image), post_dir)
+            shutil.copy2(os.path.join(src_dir, image), dst_dir)
 
     # Generate HTML files
     generate_index(output_dir, posts)
@@ -84,8 +86,8 @@ def generate_index(output_dir, posts):
         <main>
             {% for post in posts %}
             <article>
-                <h2><a href="{{ post.date.strftime('%Y-%m-%d') }}/index.html">{{ post.title }}</a></h2>
-                <time datetime="{{ post.date.isoformat() }}">{{ post.date.strftime('%B %d, %Y') }}</time>
+                <h2><a href="{{ post.date }}/index.html">{{ post.title }}</a></h2>
+                <time datetime="{{ post.date }}">{{ post.date }}</time>
             </article>
             {% endfor %}
         </main>
@@ -110,7 +112,7 @@ def generate_post(output_dir, post):
     <body>
         <header>
             <h1>{{ post.title }}</h1>
-            <time datetime="{{ post.date.isoformat() }}">{{ post.date.strftime('%B %d, %Y') }}</time>
+            <time datetime="{{ post.date }}">{{ post.date }}</time>
         </header>
         <main>
             {{ post.content }}
@@ -126,7 +128,7 @@ def generate_post(output_dir, post):
     ''')
     
     post_html = template.render(post=post)
-    post_dir = os.path.join(output_dir, post.date.strftime("%Y-%m-%d"))
+    post_dir = os.path.join(output_dir, post.date)
     with open(os.path.join(post_dir, 'index.html'), 'w', encoding='utf-8') as f:
         f.write(post_html)
 

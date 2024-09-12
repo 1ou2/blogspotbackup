@@ -3,9 +3,22 @@ import requests
 from bs4 import BeautifulSoup
 import markdownify
 import urllib.request, urllib.parse, urllib.error
-import re, os, sys,argparse
+import re, os, sys,argparse,json
 
 from dotenv import load_dotenv
+
+def load_tags(file_path="tags.json"):
+    try:
+        with open(file_path, 'r') as f:
+            tags = json.load(f)
+    except FileNotFoundError:
+        print(f"Error: The file {file_path} was not found.")
+        return {}
+    except json.JSONDecodeError:
+        print(f"Error: The file {file_path} is not valid JSON.")
+        return {}
+
+    return tags
 
 def is_image_url(url):
     # Define a regular expression pattern to match common image file extensions
@@ -67,6 +80,8 @@ def main():
         print(f"Created md directory: {target_directory}")
 
     allurls = get_urls_from_file(urls_file)
+    # remove empty values from allurls
+    allurls = [url for url in allurls if url]
 
     stats = dict()
     nb_extracted = 0
@@ -83,30 +98,50 @@ def main():
         for s in sorted(stats):
             print(f"{s:{max_length}d} : {stats[s]['date']} {stats[s]['path']}{stats[s]['filename']}")
 
+def get_local_date(soup):
+    date_entry = soup.find(class_='date-header')
+    if date_entry:
+        date_entry = date_entry.get_text(strip=True)
+        return date_entry
+
+    return False
+
+def get_year_month_day(date_entry):
+    date_parts = date_entry.split()
+    day = date_parts[1]
+    if len(day) == 1:
+        day = "0" + day
+    months = {"janvier":"01","février":"02","mars":"03","avril":"04","mai":"05","juin":"06","juillet":"07","août":"08","septembre":"09","octobre":"10","novembre":"11","décembre":"12"}
+    month = months[date_parts[2]]
+    year = date_parts[3]
+    return year, month, day
+
+def get_metadata(soup):
+    md_text = "---"
+    # get post title
+    title = soup.find('h3',class_='post-title')
+    title = title.get_text(strip=True)
+    md_text += f"title: {title}\n"
+    local_date = get_local_date(soup)
+    md_text += f"date: {local_date}\n"
+    year,month,day = get_year_month_day(local_date)
+    alltags = load_tags()
+    datetags = alltags[f"{year}-{month}"]
+    if datetags:
+        md_text += f"tags: {', '.join(datetags)}\n"
+
+    # end of Metadata section
+    md_text += "---\n"
+    return md_text
 
 def extract_post(url,stats,mddir="md"):
     md_dir = mddir + "/"
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
-    title = soup.title.text # gets you the text of the <title>(...)</title>
     
+    md_text = get_metadata(soup)
+    year,month,day = get_year_month_day(get_local_date(soup))
 
-    md_text = ""
-    date_entry = soup.find(class_='date-header')
-    if date_entry:
-        date_entry = date_entry.get_text(strip=True)
-        md_text += f"# {date_entry}\n"
-        # date is in french format, 
-        # e.g. jeudi 3 août 2023, convert it to 2023/08/03/
-        date_parts = date_entry.split()
-        day = date_parts[1]
-        # add a leading zero if needed
-        if len(day) == 1:
-            day = "0" + day
-        months = {"janvier":"01","février":"02","mars":"03","avril":"04","mai":"05","juin":"06","juillet":"07","août":"08","septembre":"09","octobre":"10","novembre":"11","décembre":"12"}
-        month = months[date_parts[2]]
-        year = date_parts[3]
-        
     # get the filename from the link
     filename = url.split('/')[-1]
     # replace extension with .md
@@ -134,6 +169,7 @@ def extract_post(url,stats,mddir="md"):
     path = path + dirname
     if not os.path.exists(path):
         os.makedirs(path)
+        os.makedirs(path+"images/")
     else:
         print(f"File already exists: {path+dirname}")
         return False
@@ -142,7 +178,6 @@ def extract_post(url,stats,mddir="md"):
     stats[id] = {}
     stats[id]['url'] = url
     stats[id]['date'] = f"{year}/{month}/{day}"
-    stats[id]['title'] = title
     stats[id]['path'] = path
     stats[id]['filename'] = filename
 
@@ -208,9 +243,9 @@ def extract_post(url,stats,mddir="md"):
             if image_name in images:
                 image_name = "big_" + image_name
             images.append(image_name)
-            urllib.request.urlretrieve(url, path + image_name)
+            urllib.request.urlretrieve(url, path + "images/" + image_name)
             downloaded.append(url)
-            md_text = md_text.replace(url, image_name)
+            md_text = md_text.replace(url, "images/" + image_name)
         else:
             print(f"URL NOT IMAGE: {url}")
 

@@ -5,3 +5,4 @@ markdownify
 python-dotenv
 markdown
 jinja2
+pyyaml
