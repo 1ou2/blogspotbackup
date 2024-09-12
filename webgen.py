@@ -37,7 +37,10 @@ def copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir):
             # Copier l'image vers /assets/images/
             shutil.copy2(original_img_path, new_img_path)
 
-            html_content = html_content.replace(img_src, f'../../assets/images/{unique_img_name}')
+            rel_img_path = os.path.relpath(new_img_path, os.path.dirname(html_file_path))
+            
+            html_content = html_content.replace(img_src, rel_img_path)
+            #html_content = html_content.replace(img_src, f'../../assets/images/{unique_img_name}')
         else:
             print(f"Image non trouvée : {original_img_path}")
 
@@ -134,7 +137,7 @@ def generate_html_article(md_file_path, output_dir):
         </main>
         <footer>
             <p><a href="../index.html">Retour à la page principale</a></p>
-            <p><a href="../collections/{collection}.html">Voir tous les articles de {collection}</a></p>
+            <p><a href="../../../../../collections/{collection}.html">Voir tous les articles de {collection}</a></p>
         </footer>
     </body>
     </html>

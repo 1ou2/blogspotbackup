@@ -216,7 +216,6 @@ def extract_post(url,stats,mddir="md"):
                 md_text += "\n"
 
     
-    print(f"{md_text}")
     # Regular expression pattern to match URLs starting with "https://" until we get to a )
     # notice the +? : which requires the match to be non greedy and stop at the first )
     pattern = r'(https?://[^\s]+?)\)'
@@ -227,7 +226,6 @@ def extract_post(url,stats,mddir="md"):
     downloaded = []
     # Print the URLs
     for url in urls:
-        print(f"URL: {url}")
         if url in downloaded:
             continue
         # some URL are very long and end with a /
