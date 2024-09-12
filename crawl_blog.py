@@ -113,8 +113,8 @@ def main():
             if not first_post_url:
                 print("Could not find first post url")
                 sys.exit(1)
-    output = "sample.txt"      
-    max_posts = 5
+
+    print(f"output file {output}")
     print(f"Crawling from {first_post_url} with max {max_posts}")
     posts = get_ordered_posts(first_post_url,max_posts)
     print(f"Crawled : {len(posts)}")

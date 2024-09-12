@@ -57,8 +57,6 @@ def main():
     if args.max_urls:
         max_urls = args.max_urls
         
-
-    target_directory = "ttt"
     print(f"Backuping: {urls_file}")
     print(f"target_directory: {target_directory}")
     print(f"max_urls: {max_urls}")
