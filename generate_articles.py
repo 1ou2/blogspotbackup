@@ -104,7 +104,7 @@ def parse_markdown_article(md_file_path):
 
         return meta_data, md_content
 
-def generate_html_article(md_file_path, output_dir):
+def generate_html_article(md_file_path, output_dir,prev_link="",next_link=""):
     """Génère un fichier HTML pour un article à partir d'un fichier markdown."""
     # Parse le fichier markdown pour obtenir les métadonnées et le contenu
     meta_data, md_content = parse_markdown_article(md_file_path)
@@ -116,6 +116,15 @@ def generate_html_article(md_file_path, output_dir):
     title = meta_data.get('title', 'Titre de l\'article')
     collection = meta_data.get('tags', 'Autre')
     date = meta_data.get('date', 'Date inconnue')
+
+    nav_links = ""
+    if prev_link or next_link:
+        nav_links = f"""
+        <nav>
+            {f'<a href="../../../../../{prev_link}">Article précédent</a>' if prev_link else ''}
+            {f'<a href="../../../../../{next_link}">Article suivant</a>' if next_link else ''}
+        </nav>
+        """
 
     # Générer le template HTML pour l'article
     html_template = f"""
@@ -136,7 +145,8 @@ def generate_html_article(md_file_path, output_dir):
             {html_content}
         </main>
         <footer>
-            <p><a href="../index.html">Retour à la page principale</a></p>
+            {nav_links}
+            <p><a href="../../../../../index.html">Retour à la page principale</a></p>
             <p><a href="../../../../../collections/{collection}.html">Voir tous les articles de {collection}</a></p>
         </footer>
     </body>
@@ -176,11 +186,12 @@ def generate_html_article(md_file_path, output_dir):
 
 if __name__ == "__main__":
     blog_dir = 'blog'
+    md_dir = 'md'
     # clean-up : remove html dir
     if os.path.exists(blog_dir):
         shutil.rmtree(blog_dir)
     output_dir = './blog/content/articles/'
-    for root, dirs, files in os.walk("md"):
+    for root, dirs, files in os.walk(md_dir):
         for file in files:
             if file.endswith('.md'):
                 md_file_path = os.path.join(root, file)

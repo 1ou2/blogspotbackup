@@ -2,56 +2,15 @@ import os
 import math
 import yaml
 from datetime import datetime
+from generate_util import get_sorted_articles
 
-def parse_markdown_metadata(md_file_path):
-    """Récupère les métadonnées d'un fichier markdown."""
-    with open(md_file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-        if content.startswith('---'):
-            _, meta_data, _ = content.split('---', 2)
-            meta_data = yaml.safe_load(meta_data)
-            return meta_data
-    return {}
 
 def generate_index_pages(content_dir, html_dir, collections, articles_per_page=10):
     """Génère la page d'index du blog avec pagination."""
     # Créer le répertoire html s'il n'existe pas encore
     os.makedirs(html_dir, exist_ok=True)
 
-    articles = []
-
-    # Parcourir les articles et extraire les métadonnées
-    for root, dirs, files in os.walk(content_dir):
-        for file in files:
-            if file.endswith('.md'):
-                md_file_path = os.path.join(root, file)
-                meta_data = parse_markdown_metadata(md_file_path)
-                #date_str = meta_data.get('date', '1970-01-01')
-                #date = datetime.strptime(date_str, '%Y-%m-%d')
-                title = meta_data.get('title', 'Sans titre')
-                #article_relative_path = os.path.relpath(os.path.join(html_dir, root, file.replace('.md', '.html')), html_dir + '/articles')
-                article_relative_path = root.split('/')
-                article_relative_path = os.path.join('articles','/'.join(article_relative_path[-4:]),file.replace('.md','.html'))
-                # date can be extract from current directory
-                current_path = article_relative_path.split('/')
-
-                # remove the last element (the file name)
-                current_path.pop()
-                # remove article folder
-                folder = current_path.pop()
-                # folder starts with two digits, use them as the hour
-                hour = folder[:2]
-                # last 3 elements are the date
-                date = datetime.strptime('/'.join(current_path[-3:]) + f":{hour}", '%Y/%m/%d:%H')
-
-                articles.append({
-                    'title': title,
-                    'date': date,
-                    'link': article_relative_path
-                })
-
-    # Trier les articles par date décroissante (plus récents d'abord)
-    articles = sorted(articles, key=lambda x: x['date'], reverse=True)
+    articles = get_sorted_articles(content_dir)
 
     # Pagination
     total_pages = math.ceil(len(articles) / articles_per_page)
@@ -128,10 +87,11 @@ def generate_index_pages(content_dir, html_dir, collections, articles_per_page=1
 
         print(f"Page d'index {page_num} générée : {page_file}")
 
-# Exemple d'utilisation
 
-content_dir = './md'
-html_dir = './blog/html'
-collections = ['Maroc', 'Indonésie', 'Autre']  # Exemple de collections
+if __name__ == "__main__":
 
-generate_index_pages(content_dir, html_dir, collections, articles_per_page=10)
+    content_dir = './md'
+    html_dir = './blog/html'
+    collections = ['Maroc', 'Indonésie', 'Autre']  # Exemple de collections
+
+    generate_index_pages(content_dir, html_dir, collections, articles_per_page=10)

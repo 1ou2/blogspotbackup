@@ -1,163 +1,63 @@
 import os
 import shutil
-import markdown
-from datetime import datetime
-from jinja2 import Template
+from generate_articles import generate_html_article, process_articles
+from generate_collections import generate_collection_pages
+from generate_index import generate_index_pages
+from generate_util import clean_output_directory,get_sorted_articles
 
-class Post:
-    def __init__(self, title, date, source_path,content, images):
-        self.title = title
-        self.date = date
-        self.source_path = source_path
-        self.content = content
-        self.images = images
-        self.year, self.month, self.day = date.split("-")
 
-def parse_markdown_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.read()
+def create_website():
+    # Define your directory paths
+    blog_dir = 'blog'
+    md_dir = 'md'
+    content_dir = './blog/content'
+    html_dir = './blog/html'
+    assets_img_dir = './blog/assets/images'
+    html_articles_dir = './blog/html/articles'
+    html_collections_dir = './blog/html/collections'
+
+    # Clean up the output directory
+    clean_output_directory(blog_dir)
+
+    articles = get_sorted_articles(md_dir)
+    print(f"Found {len(articles)} articles.")
+
+    alltags = set()
+    for article in articles:
+        alltags.add(article['tags'])
+
+    # Step 1: Generate individual HTML articles
+    output_dir = './blog/content/articles/'
+    # articles are sorted
+    # iterate though articles, get current, previous and next article
+    for prev_article, article, next_article in zip([None] + articles[:-1], articles, articles[1:] + [None]):
+        prev_link = "" 
+        next_link = ""
+        if prev_article:
+            prev_link = prev_article['link']
+        if next_article:
+            next_link = next_article['link']
+        md_file_path = article['file_path']
+        generate_html_article(md_file_path, output_dir, prev_link, next_link)
+
     
-    md = markdown.Markdown(extensions=['meta'])
-    html_content = md.convert(content)
-    
-    title = md.Meta.get('title', ['Untitled'])[0]
+    #for root, dirs, files in os.walk(md_dir):
+    #    for file in files:
+    #        if file.endswith('.md'):
+    #            md_file_path = os.path.join(root, file)
+    #            generate_html_article(md_file_path, output_dir)
 
-    
-    return title, html_content
+    # Step 2: Process articles (copy and update image links)
+    process_articles(content_dir, html_dir, assets_img_dir)
 
-def get_images(folder_path):
-    return [f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif',".heic"))]
+    # Step 3: Generate collection pages
+    generate_collection_pages(md_dir, html_articles_dir, html_collections_dir)
 
-def generate_website(source_dir, output_dir):
-    posts = []
-    
-    for year in os.listdir(source_dir):
-        year_path = os.path.join(source_dir, year)
-        if os.path.isdir(year_path):
-            for month in os.listdir(year_path):
-                month_path = os.path.join(year_path, month)
-                if os.path.isdir(month_path):
-                    for day in os.listdir(month_path):
-                        day_path = os.path.join(month_path, day)
-                        for folder in os.listdir(day_path):
-                            folder_path = os.path.join(day_path, folder)
-                            if os.path.isdir(folder_path):
-                                md_file = next((f for f in os.listdir(folder_path) if f.endswith('.md')), None)
-                                if md_file:
-                                    md_path = os.path.join(folder_path, md_file)
-                                    date = f"{year}-{month}-{day}"
-                                    title, content = parse_markdown_file(md_path)
-                                    images = get_images(folder_path)
-                                    posts.append(Post(title, date, folder_path,content, images))
+    # Step 4: Generate the index page
+    generate_index_pages(md_dir, html_dir,list(alltags))
 
-    # Sort posts by date
-    #posts.sort(key=lambda x: x.date, reverse=True)
-
-    # Create output directory
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Copy images
-    for post in posts:
-        src_dir = post.source_path
-        dst_dir = os.path.join(output_dir, post.year, post.month, post.day, src_dir.split('/')[-1])
-        os.makedirs(dst_dir, exist_ok=True)
-        for image in post.images:
-            shutil.copy2(os.path.join(src_dir, image), dst_dir)
-
-    # Generate HTML files
-    generate_index(output_dir, posts)
-    for post in posts:
-        generate_post(output_dir, post)
-
-def generate_index(output_dir, posts):
-    template = Template('''
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>My Blog</title>
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>
-        <header>
-            <h1>My Blog</h1>
-        </header>
-        <main>
-            {% for post in posts %}
-            <article>
-                <h2><a href="{{ post.date }}/index.html">{{ post.title }}</a></h2>
-                <time datetime="{{ post.date }}">{{ post.date }}</time>
-            </article>
-            {% endfor %}
-        </main>
-    </body>
-    </html>
-    ''')
-    
-    index_html = template.render(posts=posts)
-    with open(os.path.join(output_dir, 'index.html'), 'w', encoding='utf-8') as f:
-        f.write(index_html)
-
-def generate_post(output_dir, post):
-    template = Template('''
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{{ post.title }}</title>
-        <link rel="stylesheet" href="../style.css">
-    </head>
-    <body>
-        <header>
-            <h1>{{ post.title }}</h1>
-            <time datetime="{{ post.date }}">{{ post.date }}</time>
-        </header>
-        <main>
-            {{ post.content }}
-            {% for image in post.images %}
-            <img src="{{ image }}" alt="{{ image }}">
-            {% endfor %}
-        </main>
-        <footer>
-            <a href="../index.html">Back to Index</a>
-        </footer>
-    </body>
-    </html>
-    ''')
-    
-    post_html = template.render(post=post)
-    post_dir = os.path.join(output_dir, post.date)
-    with open(os.path.join(post_dir, 'index.html'), 'w', encoding='utf-8') as f:
-        f.write(post_html)
-
-def create_css(output_dir):
-    css = '''
-    body {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        margin: 0;
-        padding: 20px;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-    header {
-        border-bottom: 1px solid #ccc;
-        margin-bottom: 20px;
-    }
-    img {
-        max-width: 100%;
-        height: auto;
-    }
-    '''
-    with open(os.path.join(output_dir, 'style.css'), 'w', encoding='utf-8') as f:
-        f.write(css)
+    print("Website generated successfully!")
+    print(articles)
 
 if __name__ == "__main__":
-    source_directory = 'md'
-    output_directory = 'html'
-    
-    generate_website(source_directory, output_directory)
-    create_css(output_directory)
-    print("Website generated successfully!")
+    create_website()

@@ -90,9 +90,10 @@ def generate_collection_pages(content_dir, html_articles_dir, html_collections_d
 
         print(f"Page HTML générée pour la collection : {collection_file_path}")
 
-# Exemple d'utilisation
-content_dir = './md'
-html_articles_dir = './blog/html/articles'
-html_collections_dir = './blog/html/collections'
+if __name__ == "__main__":
+    # Exemple d'utilisation
+    content_dir = './md'
+    html_articles_dir = './blog/html/articles'
+    html_collections_dir = './blog/html/collections'
 
-generate_collection_pages(content_dir, html_articles_dir, html_collections_dir)
+    generate_collection_pages(content_dir, html_articles_dir, html_collections_dir)
