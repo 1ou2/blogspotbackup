@@ -36,7 +36,7 @@ def copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir):
             # Copier l'image vers /assets/images/
             shutil.copy2(original_img_path, new_img_path)
 
-            html_content = html_content.replace(img_src, f'../assets/images/{unique_img_name}')
+            html_content = html_content.replace(img_src, f'../../assets/images/{unique_img_name}')
         else:
             print(f"Image non trouvée : {original_img_path}")
 
@@ -44,7 +44,7 @@ def copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir):
     with open(html_file_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
         f.close()
-        
+
 
     print(f"Liens d'images mis à jour et images copiées pour : {html_file_path}")
 
@@ -80,7 +80,7 @@ def copy_images_and_update_links2(src_file_path, html_file_path, assets_img_dir)
             shutil.copy2(original_img_path, new_img_path)
 
             # Mettre à jour l'attribut 'src' dans l'image
-            img['src'] = f'../assets/images/{unique_img_name}'
+            img['src'] = f'../../assets/images/{unique_img_name}'
         else:
             print(f"Image non trouvée : {original_img_path}")
 
@@ -108,8 +108,8 @@ def process_articles(content_dir, html_dir, assets_img_dir):
                 
                 # Correspondre le chemin HTML de sortie avec le chemin markdown
                 relative_path = os.path.relpath(root, content_dir)
-                html_subdir = os.path.join(html_dir, relative_path)
-                os.makedirs(html_subdir, exist_ok=True)
+                html_articledir = os.path.join(html_dir, "articles")
+                os.makedirs(html_articledir, exist_ok=True)
 
                 # copy hml file in html dir
                 # copy the images directory that contains the article images to the output directory
@@ -118,7 +118,7 @@ def process_articles(content_dir, html_dir, assets_img_dir):
                 #   shutil.copytree(images_dir, os.path.join(html_subdir, 'images'))
                 # copy current file to html_subdir
                 html_file_name = file
-                html_file_path = os.path.join(html_subdir, html_file_name)
+                html_file_path = os.path.join(html_articledir, html_file_name)
                 shutil.copy2(src_file_path, html_file_path)
 
                 # Copier les images et mettre à jour les liens dans le fichier HTML
