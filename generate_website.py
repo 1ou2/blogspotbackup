@@ -57,7 +57,6 @@ def create_website():
     generate_index_pages(md_dir, html_dir,list(alltags))
 
     print("Website generated successfully!")
-    print(articles)
 
 if __name__ == "__main__":
     create_website()

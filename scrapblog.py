@@ -6,6 +6,9 @@ import urllib.request, urllib.parse, urllib.error
 import re, os, sys,argparse,json
 
 from dotenv import load_dotenv
+from util_scrap import Cache, UrlChecker
+import shutil
+
 
 def load_tags(file_path="tags.json"):
     try:
@@ -20,15 +23,7 @@ def load_tags(file_path="tags.json"):
 
     return tags
 
-def is_image_url(url):
-    # Define a regular expression pattern to match common image file extensions
-    image_extensions = r'\.(jpg|jpeg|png|gif|bmp|heic)$'
-    
-    # Use the re.search() function to check if the URL matches the pattern
-    if re.search(image_extensions, url, re.IGNORECASE):
-        return True
-    else:
-        return False
+
 
 
 def get_urls_from_file(file_path):
@@ -41,6 +36,7 @@ def main():
     target_directory = ""
     urls_file = "test.txt"
     max_urls = 10
+    cache_dir = "cache"
 
     # add three optional arguments, using argparse
     # -t target_directory where md files will be stored,
@@ -73,6 +69,7 @@ def main():
     print(f"Backuping: {urls_file}")
     print(f"target_directory: {target_directory}")
     print(f"max_urls: {max_urls}")
+    print(f"Using cache : {cache_dir}")
 
     # create a md directory if it doesn't exist
     if not os.path.exists(target_directory):
@@ -90,7 +87,7 @@ def main():
             nb_extracted += 1
             if max_urls > 0 and nb_extracted >= max_urls:
                 break
-            if nb_extracted % 4 == 0:
+            if nb_extracted % 2 == 0:
                 print(f"Processed {nb_extracted} urls - last url: {url}")
 
     if stats:
@@ -222,36 +219,43 @@ def extract_post(url,stats,mddir="md"):
 
     # Find all matches
     urls = re.findall(pattern, md_text)
-    images = []
-    downloaded = []
+    cache = Cache()
     # Print the URLs
     for url in urls:
-        if url in downloaded:
-            continue
-        # some URL are very long and end with a /
-        if url.endswith('/') or is_image_url(url):
+        image_name = ""
+        if cache.is_url_in_cache(url):
+            image_name = cache.get_filename(url)
+        else:
+            url_checker = UrlChecker(url)
             if url.endswith('/'):
                 newurl = url[:-1]
                 image_name = newurl.split('/')[-1] + ".jpg"
+            # no extension assume it is a jpg
+            elif not url_checker.has_extension():
+                image_name = url.split('/')[-1] + ".jpg"
             else:
                 image_name = url.split('/')[-1]
+            # some file names are really long, shorten them
             if len(image_name) > 30:
                 # get last 30 characters
                 image_name = image_name[-30:]
-            if image_name in images:
-                image_name = "big_" + image_name
-            images.append(image_name)
-            urllib.request.urlretrieve(url, path + "images/" + image_name)
-            downloaded.append(url)
-            md_text = md_text.replace(url, "images/" + image_name)
-        else:
-            print(f"URL NOT IMAGE: {url}")
+            cache.add_file(url, image_name)
+        img_path = path + "images/" + image_name
+        # copy image from cache to img_path
+        try:
+            shutil.copy2(cache.get_filepath(image_name), img_path)
+        except Exception as e:
+            print(f"Error copying {url}\n{cache.get_filepath(image_name)} --> {img_path}: {e}")
+        # update markdown
+        md_text = md_text.replace(url, "images/" + image_name)
 
     # save the markdown to a file
     with open(path+filename, 'w') as f:
         f.write(md_text)
 
     return True  
+
+
 
 if __name__ == "__main__":    
     main()
