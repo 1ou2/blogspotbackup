@@ -2,6 +2,22 @@ import markdown,yaml
 import datetime
 import os,shutil
 
+def parse_markdown_article(md_file_path):
+    """Parse le fichier markdown pour extraire les métadonnées et le contenu."""
+    with open(md_file_path, 'r', encoding='utf-8') as f:
+        # Lire le contenu brut du fichier markdown
+        content = f.read()
+
+        # Séparer l'en-tête YAML du contenu markdown
+        if content.startswith('---'):
+            _, meta_data, md_content = content.split('---', 2)
+            meta_data = yaml.safe_load(meta_data)
+        else:
+            meta_data = {}
+            md_content = content
+
+        return meta_data, md_content
+
 def parse_markdown_metadata(md_file_path):
     """Récupère les métadonnées d'un fichier markdown."""
     with open(md_file_path, 'r', encoding='utf-8') as f:

@@ -2,7 +2,7 @@ import os, shutil
 import markdown, yaml
 import re
 from bs4 import BeautifulSoup
-
+from generate_util import parse_markdown_article
 
 def copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir):
     """
@@ -87,22 +87,6 @@ def process_articles(content_dir, html_dir, assets_img_dir):
                 # Copier les images et mettre à jour les liens dans le fichier HTML
                 copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir)
                 
-
-def parse_markdown_article(md_file_path):
-    """Parse le fichier markdown pour extraire les métadonnées et le contenu."""
-    with open(md_file_path, 'r', encoding='utf-8') as f:
-        # Lire le contenu brut du fichier markdown
-        content = f.read()
-
-        # Séparer l'en-tête YAML du contenu markdown
-        if content.startswith('---'):
-            _, meta_data, md_content = content.split('---', 2)
-            meta_data = yaml.safe_load(meta_data)
-        else:
-            meta_data = {}
-            md_content = content
-
-        return meta_data, md_content
 
 def generate_html_article(md_file_path, output_dir,prev_link="",next_link=""):
     """Génère un fichier HTML pour un article à partir d'un fichier markdown."""

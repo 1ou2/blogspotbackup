@@ -56,6 +56,11 @@ def create_website():
     # Step 4: Generate the index page
     generate_index_pages(md_dir, html_dir,list(alltags))
 
+    # copy assets
+    # copy style.css
+    os.makedirs('./blog/html/assets/css', exist_ok=True)
+    shutil.copy2('style.css', './blog/html/assets/css/style.css')
+
     print("Website generated successfully!")
 
 if __name__ == "__main__":

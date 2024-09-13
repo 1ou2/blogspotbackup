@@ -34,7 +34,7 @@ def get_urls_from_file(file_path):
 def main():
     # default values
     target_directory = ""
-    urls_file = "test.txt"
+    urls_file = ""
     max_urls = 10
     cache_dir = "cache"
 
