@@ -5,13 +5,8 @@ from datetime import datetime
 from generate_util import get_sorted_articles
 
 
-def generate_index_pages(content_dir, html_dir, collections, articles_per_page=5):
-    """Génère la page d'index du blog avec pagination."""
-    # Créer le répertoire html s'il n'existe pas encore
-    os.makedirs(html_dir, exist_ok=True)
-
-    articles = get_sorted_articles(content_dir)
-
+def generate_index_pages(articles, html_dir, collections, articles_per_page=5):
+    """Génère la page d'index du blog avec affichage direct des articles."""
     # Pagination
     total_pages = math.ceil(len(articles) / articles_per_page)
 
@@ -25,12 +20,12 @@ def generate_index_pages(content_dir, html_dir, collections, articles_per_page=5
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Blog - Page {page_num}</title>
-            <link rel="stylesheet" href="assets/css/style.css">
+            <title>Pigeons voyageurs - Page {page_num}</title>
+            <link rel="stylesheet" href="assets/css/v0-index.css">
         </head>
         <body>
             <header>
-                <h1>Mon Blog de Voyage</h1>
+                <h1>Pigeons voyageurs</h1>
                 <nav>
                     <ul>
                         <li><a href="index.html">Accueil</a></li>
@@ -39,18 +34,32 @@ def generate_index_pages(content_dir, html_dir, collections, articles_per_page=5
                 </nav>
             </header>
             <main>
-                <h2>Articles récents - Page {page_num}</h2>
-                <ul>
+                <section class="article-list">
         """
 
         # Ajouter les articles de cette page
         start_idx = (page_num - 1) * articles_per_page
         end_idx = start_idx + articles_per_page
         for article in articles[start_idx:end_idx]:
-            html_content += f'<li><a href="{article["link"]}">{article["title"]} ({article["date"].strftime("%d %B %Y")})</a></li>\n'
+            # articles are 5 levels of directory below
+            content = article['html_content'].replace('../../../../../assets','assets')
+            html_content += f"""
+            <article class="article">
+                <h2><a href="{article["link"]}">{article['title']}</a></h2>
+                <p class="date">{article['date'].strftime('%d %B %Y')}</p>
+                <div class="article-meta">
+                    <span>Céline et Gabriel</span> | 
+                    <time datetime="{article['date'].strftime('%Y-%M-%d')}">{article['date'].strftime('%d %B %Y')}</time>
+                </div>
+                <div class="article-content">
+                {content}
+                </div>
+                
+            </article>
+            """
 
         html_content += """
-                </ul>
+                </section>
         """
 
         # Ajouter les liens de pagination
@@ -86,12 +95,3 @@ def generate_index_pages(content_dir, html_dir, collections, articles_per_page=5
             f.write(html_content)
 
         print(f"Page d'index {page_num} générée : {page_file}")
-
-
-if __name__ == "__main__":
-
-    content_dir = './md'
-    html_dir = './blog/html'
-    collections = ['Maroc', 'Indonésie', 'Autre']  # Exemple de collections
-
-    generate_index_pages(content_dir, html_dir, collections, articles_per_page=10)

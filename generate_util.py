@@ -1,6 +1,7 @@
 import markdown,yaml
 import datetime
 import os,shutil
+import re
 
 def parse_markdown_article(md_file_path):
     """Parse le fichier markdown pour extraire les métadonnées et le contenu."""
@@ -53,13 +54,14 @@ def get_sorted_articles(content_dir):
                 hour = 23 - int(folder[:2])
                 # last 3 elements are the date
                 date = datetime.datetime.strptime('/'.join(current_path[-3:]) + f":{hour}", '%Y/%m/%d:%H')
-
+                img_prefix= os.path.basename(file).replace('.html', '') + '_'
                 articles.append({
                     'title': title,
                     'date': date,
                     'tags': tags,
                     'link': article_relative_path,
                     'file_path' : os.path.join(root, file),
+                    'img_prefix' : img_prefix,
                     'html_content' : markdown.markdown(md_content)
                 })
 
@@ -72,3 +74,16 @@ def clean_output_directory(output_dir):
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
+
+def clean_and_create_dirs(all_dirs):
+    for dir_path in all_dirs:
+        if os.path.exists(dir_path):
+            shutil.rmtree(dir_path)
+    for dir_path in all_dirs:  
+        os.makedirs(dir_path)
+
+def get_image_names(html_content):
+    img_pattern =  r'images/[^/]+?\.(?:jpg|jpeg|png|heic)'
+    imgs = re.findall(img_pattern, html_content, re.IGNORECASE)
+    # remove duplicates in imgs
+    return list(set(imgs))

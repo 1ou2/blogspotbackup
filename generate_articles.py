@@ -2,96 +2,15 @@ import os, shutil
 import markdown, yaml
 import re
 from bs4 import BeautifulSoup
-from generate_util import parse_markdown_article
+from generate_util import parse_markdown_article,get_image_names          
 
-def copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir):
-    """
-    Copie les images du répertoire de l'article vers le répertoire /assets/images
-    et met à jour les liens vers ces images dans le fichier HTML.
-    """
-    # Lire le contenu HTML généré
-    with open(html_file_path, 'r', encoding='utf-8') as f:
-        html_content = f.read()
-
-    img_pattern =  r'images/[^/]+?\.(?:jpg|jpeg|png|heic)'
-    imgs = re.findall(img_pattern, html_content, re.IGNORECASE)
-    # remove duplicates in imgs
-    imgs = list(set(imgs))
-
-    # Le répertoire où sont les images d'origine (dans le même répertoire que le markdown)
-    article_img_dir = os.path.dirname(src_file_path)
-
-    for img_src in imgs:
-        
-        # Résoudre le chemin de l'image dans l'article
-        original_img_path = os.path.join(article_img_dir, img_src)
-
-
-        if os.path.exists(original_img_path):
-            # Créer un nom d'image unique pour éviter les collisions
-            unique_img_name = os.path.basename(src_file_path).replace('.html', '') + '_' + os.path.basename(img_src)
-
-            # Chemin de destination dans /assets/images/
-            new_img_path = os.path.join(assets_img_dir, unique_img_name)
-
-            # Copier l'image vers /assets/images/
-            shutil.copy2(original_img_path, new_img_path)
-
-            rel_img_path = os.path.relpath(new_img_path, os.path.dirname(html_file_path))
-            
-            html_content = html_content.replace(img_src, rel_img_path)
-            #html_content = html_content.replace(img_src, f'../../assets/images/{unique_img_name}')
-        else:
-            print(f"Image non trouvée : {original_img_path}")
-
-    # Écrire le contenu HTML modifié
-    with open(html_file_path, 'w', encoding='utf-8') as f:
-        f.write(html_content)
-        f.close()
-
-
-    print(f"Liens d'images mis à jour et images copiées pour : {html_file_path}")
-
-
-def process_articles(content_dir, html_dir, assets_img_dir):
-    """
-    Parcourt les articles dans /content/YYYY/MM/DD/xx-article/,
-    copie les fichiers HTML dans /html/articles/ et les images dans /assets/images/.
-    """
-    # Créer les répertoires s'ils n'existent pas encore
-    os.makedirs(html_dir, exist_ok=True)
-    os.makedirs(assets_img_dir, exist_ok=True)
-
-    # Parcourir les fichiers markdown dans content
-    for root, dirs, files in os.walk(content_dir):
-        for file in files:
-            if file.endswith('.html'):
-                src_file_path = os.path.join(root, file)
-                
-                # Correspondre le chemin HTML de sortie avec le chemin markdown
-                relative_path = os.path.relpath(root, content_dir)
-                #html_articledir = os.path.join(html_dir, "articles")
-                html_articledir = os.path.join(html_dir, relative_path)
-                os.makedirs(html_articledir, exist_ok=True)
-
-                # copy hml file in html dir
-                # copy the images directory that contains the article images to the output directory
-                #images_dir = os.path.join(os.path.dirname(src_file_path), 'images')
-                #if os.path.exists(images_dir):
-                #   shutil.copytree(images_dir, os.path.join(html_subdir, 'images'))
-                # copy current file to html_subdir
-                html_file_name = file
-                html_file_path = os.path.join(html_articledir, html_file_name)
-                shutil.copy2(src_file_path, html_file_path)
-
-                # Copier les images et mettre à jour les liens dans le fichier HTML
-                copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir)
-                
-
-def generate_html_article(article, output_dir,prev_link="",next_link=""):
+def generate_html_article(article, configuration, prev_link="",next_link=""):
     """Generate an HTML article file, from an article"""
     # Convertir le contenu markdown en HTML
     html_content = article['html_content']
+    articles_dir = configuration['articles_dir']
+    assets_img_dir = configuration['img_dir']
+    css_dir = configuration['css_dir']
 
     # Extraire les informations importantes des métadonnées
     title = article.get('title', 'Titre de l\'article')
@@ -112,30 +31,47 @@ def generate_html_article(article, output_dir,prev_link="",next_link=""):
     # articles are located in /path/to/YYYY/MM/DD/subdir/article.md
     # get articles subpath /YYYY/MM/DD/subdir/
     path_elems = md_file_path.split('/')
-    html_name = path_elems.pop().replace('.md', '.html') # remove article.html
-    # get last 4 elements
-    path_elems = path_elems[-4:]
+    html_name = path_elems.pop().replace('.md', '.html') # article.html
+    # html/articles/YYYY/MM/DD/subdir/     
+    path_elems = path_elems[-4:] # get last 4 elements
+    article_subdir = path_elems[-1]
     subpath = '/'.join(path_elems)
 
-    output_dir = os.path.join(output_dir, subpath)
+    # directory where the article will be saved
+    article_dir = os.path.join(articles_dir, subpath)
+    article_file_path = os.path.join(article_dir, html_name)
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(article_dir):
+        os.makedirs(article_dir)
 
+    # source directory for the images
+    src_images_dir = os.path.join(os.path.dirname(md_file_path), 'images')
     # copy the images directory that contains the article images to the output directory
-    images_dir = os.path.join(os.path.dirname(md_file_path), 'images')
-    # use shutil
-    if os.path.exists(images_dir):
-        shutil.copytree(images_dir, os.path.join(output_dir, 'images'))
+    for root, dirs, files in os.walk(src_images_dir):
+        for file in files:
+            original_img_path = os.path.join(root, file)
+            # create a unique name for the images
+            new_img_path = os.path.join(assets_img_dir, f"{article_subdir}_{file}")
+            shutil.copy2(original_img_path, new_img_path)
     
+    # modify the html content to point to the images in the assets directory
+    image_names = get_image_names(html_content)
+    for img_name in image_names:
+        # img_name = "images/IMG_1234.jpg" -> get name part
+        name = img_name.split('/')[1]
+        rel_assets_img = os.path.relpath(assets_img_dir, article_dir)
+        html_content = html_content.replace(img_name, os.path.join(rel_assets_img,f'{article_subdir}_{name}'))
 
-    # CSS files are located in /blog/assests/css/v0-article.css
-    css_path = os.path.join('blog', 'html','assets', 'css', 'v0-article.css')
-    # relative path to css file from html file
-    css_rel_path = os.path.relpath(css_path, output_dir)
+    # add style to comments
+    comments = html_content.split("<p>Commentaires:</p>")
+    if len(comments) > 1:
+        html_content = comments[0] + "<div class='comments'>\n" + "<h3>Commentaires:</h3>\n"+ comments[1] + "\n</div>"
+        #print(html_content)
 
+    article['html_content'] = html_content
 
     index_rel_path = "../../../../.."
+    css_rel_path = os.path.relpath(os.path.join(css_dir,"v0-article.css"), article_dir)
     # Générer le template HTML pour l'article
     html_template = f"""
     <!DOCTYPE html>
@@ -173,10 +109,11 @@ def generate_html_article(article, output_dir,prev_link="",next_link=""):
     """
 
     # Écrire le contenu HTML dans le fichier de sortie
-    with open(os.path.join(output_dir,html_name), 'w', encoding='utf-8') as f:
+    with open(article_file_path, 'w', encoding='utf-8') as f:
         f.write(html_template)
 
     print(f"Article HTML généré pour : {md_file_path}")
+
 
 if __name__ == "__main__":
     blog_dir = 'blog'
@@ -194,5 +131,3 @@ if __name__ == "__main__":
     content_dir = './blog/content'
     html_dir = './blog/html'
     assets_img_dir = './blog/assets/images'
-
-    process_articles(content_dir, html_dir, assets_img_dir)
