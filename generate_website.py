@@ -37,8 +37,7 @@ def create_website():
             prev_link = prev_article['link']
         if next_article:
             next_link = next_article['link']
-        md_file_path = article['file_path']
-        generate_html_article(md_file_path, output_dir, prev_link, next_link)
+        generate_html_article(article, output_dir, prev_link, next_link)
 
     
     #for root, dirs, files in os.walk(md_dir):
@@ -59,7 +58,9 @@ def create_website():
     # copy assets
     # copy style.css
     os.makedirs('./blog/html/assets/css', exist_ok=True)
-    shutil.copy2('style.css', './blog/html/assets/css/style.css')
+    css_files = ['./style.css','v0-article.css','v0-article-black.css']
+    for css_file in css_files:
+        shutil.copy2(f"assets/{css_file}", './blog/html/assets/css')
 
     print("Website generated successfully!")
 

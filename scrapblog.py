@@ -118,7 +118,7 @@ def get_year_month_day(date_entry):
     return year, month, day
 
 def get_metadata(soup):
-    md_text = "---"
+    md_text = "---\n"
     # get post title
     title = soup.find('h3',class_='post-title')
     title = title.get_text(strip=True)

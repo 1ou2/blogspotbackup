@@ -88,18 +88,15 @@ def process_articles(content_dir, html_dir, assets_img_dir):
                 copy_images_and_update_links(src_file_path, html_file_path, assets_img_dir)
                 
 
-def generate_html_article(md_file_path, output_dir,prev_link="",next_link=""):
-    """Génère un fichier HTML pour un article à partir d'un fichier markdown."""
-    # Parse le fichier markdown pour obtenir les métadonnées et le contenu
-    meta_data, md_content = parse_markdown_article(md_file_path)
-
+def generate_html_article(article, output_dir,prev_link="",next_link=""):
+    """Generate an HTML article file, from an article"""
     # Convertir le contenu markdown en HTML
-    html_content = markdown.markdown(md_content)
+    html_content = article['html_content']
 
     # Extraire les informations importantes des métadonnées
-    title = meta_data.get('title', 'Titre de l\'article')
-    collection = meta_data.get('tags', 'Autre')
-    date = meta_data.get('date', 'Date inconnue')
+    title = article.get('title', 'Titre de l\'article')
+    collection = article.get('tags', 'Autre')
+    date = article.get('date', 'Date inconnue')
 
     nav_links = ""
     if prev_link or next_link:
@@ -110,6 +107,35 @@ def generate_html_article(md_file_path, output_dir,prev_link="",next_link=""):
         </nav>
         """
 
+    # Générer le chemin de sortie pour le fichier HTML
+    md_file_path = article['file_path']
+    # articles are located in /path/to/YYYY/MM/DD/subdir/article.md
+    # get articles subpath /YYYY/MM/DD/subdir/
+    path_elems = md_file_path.split('/')
+    html_name = path_elems.pop().replace('.md', '.html') # remove article.html
+    # get last 4 elements
+    path_elems = path_elems[-4:]
+    subpath = '/'.join(path_elems)
+
+    output_dir = os.path.join(output_dir, subpath)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # copy the images directory that contains the article images to the output directory
+    images_dir = os.path.join(os.path.dirname(md_file_path), 'images')
+    # use shutil
+    if os.path.exists(images_dir):
+        shutil.copytree(images_dir, os.path.join(output_dir, 'images'))
+    
+
+    # CSS files are located in /blog/assests/css/v0-article.css
+    css_path = os.path.join('blog', 'html','assets', 'css', 'v0-article.css')
+    # relative path to css file from html file
+    css_rel_path = os.path.relpath(css_path, output_dir)
+
+
+    index_rel_path = "../../../../.."
     # Générer le template HTML pour l'article
     html_template = f"""
     <!DOCTYPE html>
@@ -118,11 +144,20 @@ def generate_html_article(md_file_path, output_dir,prev_link="",next_link=""):
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>{title}</title>
-        <link rel="stylesheet" href="../assets/css/style.css">
+        <link rel="stylesheet" href="{css_rel_path}">
     </head>
     <body>
         <header>
             <h1>{title}</h1>
+            <nav>
+                <ul>
+                    <li><a href="{index_rel_path}/index.html">Accueil</a></li>
+                    <li><a href="{index_rel_path}/collections/">Trips</a></li>
+                    {f'<li><a href="../../../../../{prev_link}">Article précédent</a></li>' if prev_link else ''}
+                    {f'<li><a href="../../../../../{next_link}">Article suivant</a></li>' if next_link else ''}
+                    <li><a href="{index_rel_path}/about.html">À propos</a></li>
+                </ul>
+            </nav>
             <p><em>Publié le {date} | Collection : {collection}</em></p>
         </header>
         <main>
@@ -137,36 +172,11 @@ def generate_html_article(md_file_path, output_dir,prev_link="",next_link=""):
     </html>
     """
 
-    # Générer le chemin de sortie pour le fichier HTML
-    article_filename = os.path.basename(md_file_path).replace('.md', '.html')
-    # articles are located in /path/to/YYYY/MM/DD/subdir/article.md
-    # get articles subpath /YYYY/MM/DD/subdir/
-    path_elems = md_file_path.split('/')
-    path_elems.pop() # remove article.md
-    # get last 4 elements
-    path_elems = path_elems[-4:]
-    subpath = '/'.join(path_elems)
-
-    output_dir = os.path.join(output_dir, subpath)
-    output_file_path = os.path.join(output_dir ,article_filename)
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # copy the images directory that contains the article images to the output directory
-    images_dir = os.path.join(os.path.dirname(md_file_path), 'images')
-    # use shutil
-    if os.path.exists(images_dir):
-        shutil.copytree(images_dir, os.path.join(output_dir, 'images'))
-    
-
-
-
     # Écrire le contenu HTML dans le fichier de sortie
-    with open(output_file_path, 'w', encoding='utf-8') as f:
+    with open(os.path.join(output_dir,html_name), 'w', encoding='utf-8') as f:
         f.write(html_template)
 
-    print(f"Article HTML généré : {output_file_path}")
+    print(f"Article HTML généré pour : {md_file_path}")
 
 if __name__ == "__main__":
     blog_dir = 'blog'
