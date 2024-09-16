@@ -82,6 +82,7 @@ def main():
 
     stats = dict()
     nb_extracted = 0
+    nb_existing = 0
     for url in allurls:
         if extract_post(url,stats,mddir=target_directory):
             nb_extracted += 1
@@ -89,7 +90,10 @@ def main():
                 break
             if nb_extracted % 2 == 0:
                 print(f"Processed {nb_extracted} urls - last url: {url}")
-
+        else:
+            nb_existing += 1
+            if nb_existing % 10 == 0:
+                print(f"Skipped {nb_existing} urls - last url: {url}")
     if stats:
         max_length = max(len(str(s)) for s in stats)
         for s in sorted(stats):
@@ -123,7 +127,7 @@ def get_metadata(soup):
     md_text += f"date: {local_date}\n"
     year,month,day = get_year_month_day(local_date)
     alltags = load_tags()
-    datetags = alltags[f"{year}-{month}"]
+    datetags = alltags.get(f"{year}-{month}", [])
     if datetags:
         md_text += f"tags: {', '.join(datetags)}\n"
 
@@ -150,10 +154,10 @@ def extract_post(url,stats,mddir="md"):
     # get number of files in path directory
     entries = os.listdir(path)
     dirs = [entry for entry in entries if os.path.isdir(os.path.join(path, entry))]
+    
     # check if we already have a directory ending with filename
     for d in dirs:
         if d.endswith(filename.replace('.md', '')):
-            print(f"File already exists: {path+d}/{filename}")
             return False
 
     # Count the number of directories

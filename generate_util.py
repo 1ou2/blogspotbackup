@@ -35,7 +35,8 @@ def get_sorted_articles(content_dir):
         for file in files:
             if file.endswith('.md'):
                 md_file_path = os.path.join(root, file)
-                meta_data = parse_markdown_metadata(md_file_path)
+                #meta_data = parse_markdown_metadata(md_file_path)
+                meta_data, md_content = parse_markdown_article(md_file_path)
                 title = meta_data.get('title', 'Sans titre')
                 tags = meta_data.get('tags', [])
                 #article_relative_path = os.path.relpath(os.path.join(html_dir, root, file.replace('.md', '.html')), html_dir + '/articles')
@@ -58,7 +59,8 @@ def get_sorted_articles(content_dir):
                     'date': date,
                     'tags': tags,
                     'link': article_relative_path,
-                    'file_path' : os.path.join(root, file)
+                    'file_path' : os.path.join(root, file),
+                    'html_content' : markdown.markdown(md_content)
                 })
 
     
