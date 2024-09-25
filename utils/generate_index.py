@@ -2,8 +2,6 @@ import os
 import math
 import yaml
 from datetime import datetime
-from utils.generate_util import get_sorted_articles
-
 
 def generate_index_pages(articles, html_dir, collections, articles_per_page=5):
     """Génère la page d'index du blog avec affichage direct des articles."""

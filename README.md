@@ -101,3 +101,68 @@ Anonymous (10 juillet 2023 à 14:52):
 Good job !
 
 ```
+
+# Blog Generator
+
+This project contains a Python script (`generate_website.py`) that generates a static website from Markdown files. It creates HTML articles, collection pages, and index pages for a blog-like structure.
+
+## Usage
+
+1. Ensure you have Python installed on your system.
+
+2. Install the required dependencies (if any - you may need to create a `requirements.txt` file listing the dependencies).
+
+3. Prepare your Markdown files:
+   - Place all your Markdown (.md) files in a directory named `md` in the project root.
+   - Each Markdown file should represent a blog post and include metadata (title, date, tags) at the top.
+
+4. Run the script
+
+5. The generated website will be created in the `html` directory.
+
+## Directory Structure
+
+After running the script, the following directory structure will be created:
+```
+html/
+├── assets/
+│ ├── css/
+│ │ ├── style.css
+│ │ ├── v0-article.css
+│ │ ├── v0-article-black.css
+│ │ └── v0-index.css
+│ └── images/
+├── articles/
+│ └── generated HTML articles
+├── collections/
+│ └── generated collection pages
+└── index.html
+```
+
+## Configuration
+
+The script uses a configuration dictionary to manage various directories:
+
+- `md_dir`: Directory containing Markdown files (default: 'md')
+- `html_dir`: Output directory for the generated website (default: 'html')
+- `assets_dir`: Directory for static assets (default: 'html/assets')
+- `css_dir`: Directory for CSS files (default: 'html/assets/css')
+- `img_dir`: Directory for images (default: 'html/assets/images')
+- `articles_dir`: Directory for generated HTML articles (default: 'html/articles')
+- `collections_dir`: Directory for generated collection pages (default: 'html/collections')
+
+## Features
+
+1. Generates individual HTML articles from Markdown files
+2. Creates collection pages based on tags
+3. Generates index pages
+4. Supports navigation between articles (previous/next links)
+5. Copies CSS files to the output directory
+
+## The Role of tags.json
+Tags are currently used to manage collections. Each article is associated to a collection, and a collection groups all articles containing this tag.
+
+
+# TODO
+Add parameters for "cache" directory, tags.json file
+I18N : get rid of "Commentaires" in the code
