@@ -137,6 +137,8 @@ def get_metadata(soup):
 
 def extract_post(url,stats,mddir="md"):
     md_dir = mddir + "/"
+    # Start of comment block in markdown file
+    START_COMMENT = "\n\nCommentaires:\n"
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
     
@@ -210,7 +212,7 @@ def extract_post(url,stats,mddir="md"):
 
         if comment_elements:
             # add comments to the markdown
-            md_text += "\n\nCommentaires:\n"
+            md_text += START_COMMENT
             for author, body, timestamp in comment_elements:
                 md_text += f"\n{author} ({timestamp}):\n{body}\n"
                 # add a line break after each comment

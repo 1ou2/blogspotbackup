@@ -75,3 +75,29 @@ To scrape your blog posts and save them locally, run the following command:
 
 For example, to scrape the latest 50 posts from `https://myblog.example.com` and save them as Markdown files in the `~/blog-backup` directory, you would run:
 ```python scrapblog.py -u https://myblog.example.com -t ~/blog-backup -m 50```
+
+The markdown files and images are stored in
+```
+MD_DIR/YYYY/MM/DD/XX-folder_name/post.md
+MD_DIR/YYYY/MM/DD/XX-folder_name/images/*.jpg
+```
+The structure of the markdown file is composed of 
+- a yaml block
+- the main text
+- an optionnal comment section that starts with "Commentaires"
+```
+---
+title: Direction equateur - 8 juillet
+date: lundi 10 juillet 2023
+tags: equateur
+---
+
+My blog post
+blabla
+
+Commentaires:
+
+Anonymous (10 juillet 2023 à 14:52):
+Good job !
+
+```

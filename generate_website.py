@@ -55,7 +55,7 @@ def create_website():
 
 
     # Step 3: Generate collection pages
-    #generate_collection_pages(md_dir, html_articles_dir, html_collections_dir)
+    generate_collection_pages(articles, configuration, list(alltags))
 
     # Step 4: Generate the index page
     generate_index_pages(articles, html_dir,list(alltags))
