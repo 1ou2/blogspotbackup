@@ -164,5 +164,11 @@ Tags are currently used to manage collections. Each article is associated to a c
 
 
 # TODO
-Add parameters for "cache" directory, tags.json file
-I18N : get rid of "Commentaires" in the code
+- Add parameters for "cache" directory, tags.json file -> review .env file to read each parameters
+- I18N : get rid of `"Commentaires"` constant in `scrapblog.py`
+- I18N : translate python comments from french to english
+- *Dynamic handling of comments* : currently as the website is static, old comments were retreived and are displayed, but for new comments we need to modify the code. 
+  - Add a post form with a jquery, to create a comment
+  - add a jquery to fetch recent comments
+  - have a backend server with REST API to get/add comments.
+  - once a day recreate the static web site by adding the most recent comments
