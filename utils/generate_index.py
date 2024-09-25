@@ -2,7 +2,7 @@ import os
 import math
 import yaml
 from datetime import datetime
-from generate_util import get_sorted_articles
+from utils.generate_util import get_sorted_articles
 
 
 def generate_index_pages(articles, html_dir, collections, articles_per_page=5):

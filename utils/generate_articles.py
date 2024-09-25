@@ -2,7 +2,7 @@ import os, shutil
 import markdown, yaml
 import re
 from bs4 import BeautifulSoup
-from generate_util import parse_markdown_article,get_image_names          
+from utils.generate_util import parse_markdown_article,get_image_names          
 
 def generate_html_article(article, configuration, prev_link="",next_link=""):
     """Generate an HTML article file, from an article"""

@@ -6,7 +6,7 @@ import urllib.request, urllib.parse, urllib.error
 import re, os, sys,argparse,json
 
 from dotenv import load_dotenv
-from util_scrap import Cache, UrlChecker
+from utils.util_scrap import Cache, UrlChecker
 import shutil
 
 

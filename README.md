@@ -1,21 +1,18 @@
 # Set-up python environment
-python3 -m venv .venv
+```python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
 
 # Configuration
 Blog root file is stored in .env file
 ```blog_url="https://myblog.blogger.com/"```
 
 # Usage
-To scrape your blog posts and save them locally, run the following command:
-```python3 scrapblog.py -u <blog_url> -t <target_directory> -m <max_pages>```
-- `-u`, `--blog_url`: The URL of the blog you want to scrape. This is a required argument.
-- `-t`, `--target_directory`: The directory where the scraped blog posts will be saved as Markdown files. This is a required argument.
-- `-m`, `--max_pages`: The maximum number of pages (blog posts) to scrape. If not provided, the script will scrape all available posts.
-
-For example, to scrape the latest 50 posts from `https://myblog.example.com` and save them as Markdown files in the `~/blog-backup` directory, you would run:
-```python scrapblog.py -u https://myblog.example.com -t ~/blog-backup -m 50```
+There are 3 scripts to use in order
+1. crawl_blog.py : get a list of blog post urls and store them in a file
+2. scrapblog.py : using the file list of urls in input, download all posts in mardown format (images are also downloaded)
+3. the blog can be generated again using generate_website.py script
 
 
 # Crawl Blog Usage Guide
@@ -68,3 +65,12 @@ Run the script using the following command:
 The script will print progress information to the console and save the crawled URLs to the specified output file (or `all_urls.txt` by default).
 
 
+# Scrapblog.py script Usage
+To scrape your blog posts and save them locally, run the following command:
+```python3 scrapblog.py -u <blog_url> -t <target_directory> -m <max_pages>```
+- `-u`, `--blog_url`: The URL of the blog you want to scrape. This is a required argument.
+- `-t`, `--target_directory`: The directory where the scraped blog posts will be saved as Markdown files. This is a required argument.
+- `-m`, `--max_pages`: The maximum number of pages (blog posts) to scrape. If not provided, the script will scrape all available posts.
+
+For example, to scrape the latest 50 posts from `https://myblog.example.com` and save them as Markdown files in the `~/blog-backup` directory, you would run:
+```python scrapblog.py -u https://myblog.example.com -t ~/blog-backup -m 50```

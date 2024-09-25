@@ -1,9 +1,9 @@
 import os
 import shutil
-from generate_articles import generate_html_article
-from generate_collections import generate_collection_pages
-from generate_index import generate_index_pages
-from generate_util import clean_and_create_dirs,get_sorted_articles
+from utils.generate_articles import generate_html_article
+from utils.generate_collections import generate_collection_pages
+from utils.generate_index import generate_index_pages
+from utils.generate_util import clean_and_create_dirs,get_sorted_articles
 
 
 def create_website():
