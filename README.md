@@ -5,6 +5,18 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+By default, the date are displayed using the French locale. Make sure to have it installed.
+```
+# display list of installed locale
+locale -a
+# generate french locale
+sudo locale-gen fr_FR.UTF-8
+# update locale database
+sudo update-locale
+# french locale should be displayed
+locale -a
+```
+
 # Configuration
 Blog root file is stored in .env file
 ```blog_url="https://myblog.blogger.com/"```

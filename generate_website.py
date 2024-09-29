@@ -7,6 +7,10 @@ from utils.generate_util import clean_and_create_dirs,get_sorted_articles
 import locale
 
 def create_website(theme="black", loc='fr_FR.UTF-8'):
+    print("Creating website...")
+    print("Theme: ", theme)
+    print("Locale: ", loc)
+
     md_dir = 'md'
     html_dir = 'html'
     assets_dir = os.path.join(html_dir,'assets')
@@ -37,6 +41,9 @@ def create_website(theme="black", loc='fr_FR.UTF-8'):
     css_files = ['article-black.css','index-black.css','article-white.css','index-white.css']
     for css_file in css_files:
         shutil.copy2(f"assets/{css_file}", css_dir)
+
+    # copy about.html
+    shutil.copy2("assets/about.html", html_dir)
 
     articles = get_sorted_articles(md_dir)
     print(f"Found {len(articles)} articles.")
