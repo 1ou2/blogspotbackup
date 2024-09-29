@@ -92,7 +92,7 @@ def main():
     output = "all_urls.txt"
     max_posts = None
     first_post_url = None
-    
+    load_dotenv()
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--first_post_url", help="url of the first post")
     parser.add_argument("-m", "--max_posts", type=int, help="maximum number of posts to crawl")
@@ -101,14 +101,16 @@ def main():
 
     if args.first_post_url:
         first_post_url = args.first_post_url
+
+    m_urls = os.getenv("max_urls")
+    if m_urls:
+        max_posts = int(m_urls)
     if args.max_posts:
         max_posts = args.max_posts
     if args.output:
         output = args.output
 
     if not first_post_url:
-        # load blog url from .env
-        load_dotenv()
         first_post_url = os.getenv("first_post_url")
         if not first_post_url:
             print("first_post_url not provided")

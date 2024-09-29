@@ -1,5 +1,7 @@
 import urllib.request, urllib.parse, urllib.error
 import re, os, sys,argparse,json
+from PIL import Image
+import pyheif
 
 class Cache:
     def __init__(self, cache_dir="cache",cache_file="cache.json"):
@@ -40,14 +42,48 @@ class Cache:
                 self.save_cache()
         return False
     
+    def convert_heic_to_jpg(self,heic_file_path, jpg_file_path):
+        print(f"Converting {heic_file_path} to {jpg_file_path}")
+        # Open the HEIC file using pyheif
+        heif_file = pyheif.read(heic_file_path)
+
+        # Convert the HEIC data to a Pillow image
+        image = Image.frombytes(
+            heif_file.mode, 
+            heif_file.size, 
+            heif_file.data,
+            "raw",
+            heif_file.mode,
+            heif_file.stride,
+        )
+
+        # Save the image as a JPG
+        image.save(jpg_file_path, "JPEG")
+
     def add_file(self, url, filename):
+        heic_filename = None
         # check if url is already in cache
         if not self.is_url_in_cache(url):
-            # download image to cache
+            # check if file is in HEIC format
+            if UrlChecker(url).has_extension() and url.split('.')[-1].lower() == "heic":
+                heic_filename = filename
+                filename = filename.split('.')[0] + ".jpg"
+
+            # filename contains a jpg extension, add a "_" prefix to the filename until it's unique
             while self.is_file_in_cache(filename):
                 filename = "_" + filename
 
-            urllib.request.urlretrieve(url, os.path.join(self.cache_dir, "images", filename))
+            if heic_filename:
+                # download heic file
+                urllib.request.urlretrieve(url, os.path.join(self.cache_dir, "images", heic_filename))
+                try:
+                    # convert heic to jpg
+                    self.convert_heic_to_jpg(os.path.join(self.cache_dir, "images", heic_filename), os.path.join(self.cache_dir, "images", filename))
+                except:
+                    # not a real heic file, just rename the file assuming it is a jpeg
+                    os.rename(os.path.join(self.cache_dir, "images", heic_filename), os.path.join(self.cache_dir, "images", filename))
+            else:
+                urllib.request.urlretrieve(url, os.path.join(self.cache_dir, "images", filename))
             self.cache[url] = filename
             self.save_cache()
 

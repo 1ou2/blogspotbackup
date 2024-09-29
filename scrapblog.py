@@ -8,7 +8,8 @@ import re, os, sys,argparse,json
 from dotenv import load_dotenv
 from utils.util_scrap import Cache, UrlChecker
 import shutil
-
+from PIL import Image
+import pyheif
 
 def load_tags(file_path="tags.json"):
     try:
@@ -39,6 +40,9 @@ def main():
     max_urls = -1
     cache_dir = "cache"
 
+    # Load environment variables from .env file
+    load_dotenv()
+
     # add three optional arguments, using argparse
     # -t target_directory where md files will be stored,
     # -m max_urls maximum number of pages to scrap,
@@ -55,15 +59,14 @@ def main():
     if args.urls_file:
         urls_file = args.urls_file
     if urls_file == "":
-        # load blog url from .env
-        # Load environment variables from .env file
-        load_dotenv()
-
         # Access the secret parameter
         urls_file = os.getenv("urls_file")
         if not urls_file:
             print("urls_file not found in .env file")
             sys.exit(1)
+    m_urls = os.getenv("max_urls")
+    if m_urls:
+        max_urls = int(m_urls)
     if args.max_urls:
         max_urls = args.max_urls
         
@@ -135,6 +138,29 @@ def get_metadata(soup):
     # end of Metadata section
     md_text += "---\n"
     return md_text
+
+
+
+
+
+def convert_heic_to_jpg(heic_file_path, jpg_file_path):
+    # Open the HEIC file using pyheif
+    heif_file = pyheif.read(heic_file_path)
+
+    # Convert the HEIC data to a Pillow image
+    image = Image.frombytes(
+        heif_file.mode, 
+        heif_file.size, 
+        heif_file.data,
+        "raw",
+        heif_file.mode,
+        heif_file.stride,
+    )
+
+    # Save the image as a JPG
+    image.save(jpg_file_path, "JPEG")
+
+
 
 def extract_post(url,stats,mddir="md"):
     md_dir = mddir + "/"
@@ -247,6 +273,7 @@ def extract_post(url,stats,mddir="md"):
                 # get last 30 characters
                 image_name = image_name[-30:]
             cache.add_file(url, image_name)
+            image_name = cache.get_filename(url)
         img_path = path + "images/" + image_name
         # copy image from cache to img_path
         try:

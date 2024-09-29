@@ -9,3 +9,5 @@ pyyaml
 flask
 flask_limiter
 bleach
+pillow
+pyheif
