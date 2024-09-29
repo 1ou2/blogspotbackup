@@ -6,3 +6,6 @@ python-dotenv
 markdown
 jinja2
 pyyaml
+flask
+flask_limiter
+bleach

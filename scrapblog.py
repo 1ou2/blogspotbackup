@@ -35,7 +35,8 @@ def main():
     # default values
     target_directory = ""
     urls_file = ""
-    max_urls = 10
+    # by default no maximum url
+    max_urls = -1
     cache_dir = "cache"
 
     # add three optional arguments, using argparse

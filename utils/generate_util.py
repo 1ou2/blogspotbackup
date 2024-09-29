@@ -3,21 +3,39 @@ import datetime
 import os,shutil
 import re
 
+
 def parse_markdown_article(md_file_path):
-    """Parse le fichier markdown pour extraire les métadonnées et le contenu."""
+    """Parse markdown file, extract meta data and content"""
     with open(md_file_path, 'r', encoding='utf-8') as f:
-        # Lire le contenu brut du fichier markdown
         content = f.read()
 
-        # Séparer l'en-tête YAML du contenu markdown
-        if content.startswith('---'):
-            _, meta_data, md_content = content.split('---', 2)
-            meta_data = yaml.safe_load(meta_data)
+        # Use regex to extract the YAML front matter
+        yaml_pattern = re.compile(r'^---\s*\n(.*?)\n---\s*\n', re.DOTALL)
+        match = yaml_pattern.match(content)
+
+        if match:
+            yaml_content = match.group(1)
+            md_content = content[match.end():]
+
+            # Parse YAML content
+            try:
+                meta_data = yaml.safe_load(yaml_content)
+            except yaml.YAMLError as e:
+                # If YAML parsing fails, try a custom approach
+                # some data contains ':' so we split on the first ':' encountered
+                print(f"Error parsing YAML in {md_file_path}: {e}")
+                meta_data = {}
+                for line in yaml_content.split('\n'):
+                    if ':' in line:
+                        key, value = line.split(':', 1)
+                        meta_data[key.strip()] = value.strip()
+
         else:
             meta_data = {}
             md_content = content
 
         return meta_data, md_content
+
 
 def parse_markdown_metadata(md_file_path):
     """Récupère les métadonnées d'un fichier markdown."""
