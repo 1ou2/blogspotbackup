@@ -71,7 +71,8 @@ def generate_html_article(article, configuration, prev_link="",next_link=""):
     article['html_content'] = html_content
 
     index_rel_path = "../../../../.."
-    css_rel_path = os.path.relpath(os.path.join(css_dir,"v0-article.css"), article_dir)
+    theme = configuration['theme']
+    css_rel_path = os.path.relpath(os.path.join(css_dir,f"article-{theme}.css"), article_dir)
     # Générer le template HTML pour l'article
     html_template = f"""
     <!DOCTYPE html>
@@ -88,7 +89,7 @@ def generate_html_article(article, configuration, prev_link="",next_link=""):
             <nav>
                 <ul>
                     <li><a href="{index_rel_path}/index.html">Accueil</a></li>
-                    <li><a href="{index_rel_path}/collections/">Trips</a></li>
+                    <li><a href="{index_rel_path}/collections/">Collections</a></li>
                     {f'<li><a href="../../../../../{prev_link}">Article précédent</a></li>' if prev_link else ''}
                     {f'<li><a href="../../../../../{next_link}">Article suivant</a></li>' if next_link else ''}
                     <li><a href="{index_rel_path}/about.html">À propos</a></li>

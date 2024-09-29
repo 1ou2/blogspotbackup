@@ -2,27 +2,61 @@ import os
 import yaml
 import markdown
 
-def parse_markdown_article(md_file_path):
-    """Parse le fichier markdown pour extraire les métadonnées et le contenu."""
-    with open(md_file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+def generate_collection_index(configuration, collections):
+    """Generate the index.html page for collections"""
 
-        # Séparer l'en-tête YAML du contenu markdown
-        if content.startswith('---'):
-            _, meta_data, _ = content.split('---', 2)
-            meta_data = yaml.safe_load(meta_data)
-        else:
-            meta_data = {}
+    theme = configuration['theme']
+    collections_dir = configuration['collections_dir']
 
-        return meta_data
+    # Générer le contenu HTML pour l'index des collections
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Index des collections</title>
+        <link rel="stylesheet" href="../assets/css/index-{theme}.css">
+    </head>
+    <body>
+        <header>
+            <h1>Nos voyages</h1>
+        </header>
+        <main>
+            <div class="article article-list">
+            <ul>
+    """
+
+    # Ajouter la liste des collections
+    for collection in collections:
+        html_content += f"<li><a href=\"{collection}.html\">{collection}</a></li>"
+
+    html_content += """
+            </ul>
+            </div>
+        </main>
+        <footer>
+            <p><a href="../index.html">Retour à la page principale</a></p>
+        </footer>
+    </body>
+    </html>
+    """
+
+    # Écrire le fichier HTML de l'index des collections
+    index_file_path = os.path.join(collections_dir, 'index.html')
+    with open(index_file_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+
+    print(f"Page HTML générée pour l'index des collections : {index_file_path}")
 
 def generate_collection_pages(articles, configuration, collections):
-    """Génère les pages de collections basées sur les articles dans le répertoire content."""
+    """Generate HTML collection pages"""
    
-    # Générer les pages HTML pour chaque collection
+    # Generate HTML page for each collection
     for collection in collections:
 
         collection_file_path = os.path.join(configuration['collections_dir'], f"{collection}.html")
+        theme = configuration['theme']
 
         # Générer le contenu HTML pour la collection
         html_content = f"""
@@ -32,7 +66,7 @@ def generate_collection_pages(articles, configuration, collections):
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Collection: {collection}</title>
-            <link rel="stylesheet" href="../assets/css/v0-index.css">
+            <link rel="stylesheet" href="../assets/css/index-{theme}.css">
         </head>
         <body>
             <header>
@@ -44,7 +78,8 @@ def generate_collection_pages(articles, configuration, collections):
         """
         # Ajouter la liste des articles dans cette collection
         for article in articles:
-            if article['tags'] == collection:
+            art_col = f"{article['date'].year}-{article['tags']}"
+            if art_col == collection:
                 html_content += f"<li><a href=\"../{article['link']}\">{article['title']}</a></li>"
             
 
@@ -63,6 +98,8 @@ def generate_collection_pages(articles, configuration, collections):
             f.write(html_content)
 
         print(f"Page HTML générée pour la collection : {collection_file_path}")
+
+        generate_collection_index(configuration, collections)
 
 if __name__ == "__main__":
     # Exemple d'utilisation

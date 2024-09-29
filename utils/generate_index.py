@@ -3,15 +3,17 @@ import math
 import yaml
 from datetime import datetime
 
-def generate_index_pages(articles, html_dir, collections, articles_per_page=5):
-    """Génère la page d'index du blog avec affichage direct des articles."""
+def generate_index_pages(articles, configuration, collections, articles_per_page=5):
+    """Generate index page for the blog"""
     # Pagination
     total_pages = math.ceil(len(articles) / articles_per_page)
-
+    html_dir = configuration['html_dir']
+    theme = configuration['theme']
+    
     for page_num in range(1, total_pages + 1):
         page_file = os.path.join(html_dir, f'index{"" if page_num == 1 else f"_{page_num}"}.html')
         
-        # Générer le contenu de la page
+        # Generate page content
         html_content = f"""
         <!DOCTYPE html>
         <html lang="fr">
@@ -19,7 +21,7 @@ def generate_index_pages(articles, html_dir, collections, articles_per_page=5):
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Pigeons voyageurs - Page {page_num}</title>
-            <link rel="stylesheet" href="assets/css/v0-index.css">
+            <link rel="stylesheet" href="assets/css/index-{theme}.css">
         </head>
         <body>
             <header>
@@ -27,7 +29,7 @@ def generate_index_pages(articles, html_dir, collections, articles_per_page=5):
                 <nav>
                     <ul>
                         <li><a href="index.html">Accueil</a></li>
-                        <li><a href="#collections">Collections</a></li>
+                        <li><a href="collections/index.html">Collections</a></li>
                     </ul>
                 </nav>
             </header>
@@ -44,10 +46,10 @@ def generate_index_pages(articles, html_dir, collections, articles_per_page=5):
             html_content += f"""
             <article class="article">
                 <h2><a href="{article["link"]}">{article['title']}</a></h2>
-                <p class="date">{article['date'].strftime('%d %B %Y')}</p>
+                <p class="date">{article['date'].strftime('%d %B %Y').capitalize()}</p>
                 <div class="article-meta">
                     <span>Céline et Gabriel</span> | 
-                    <time datetime="{article['date'].strftime('%Y-%M-%d')}">{article['date'].strftime('%d %B %Y')}</time>
+                    <time datetime="{article['date'].strftime('%Y-%M-%d').capitalize()}">{article['date'].strftime('%d %B %Y').capitalize()}</time>
                 </div>
                 <div class="article-content">
                 {content}
@@ -70,16 +72,16 @@ def generate_index_pages(articles, html_dir, collections, articles_per_page=5):
 
         # Ajouter la section des collections
         html_content += """
-            <section id="collections">
+            <footer id="collections">
                 <h2>Collections</h2>
-                <ul>
+                <p>
         """
         for collection in collections:
-            html_content += f'<li><a href="collections/{collection}.html">{collection}</a></li>\n'
+            html_content += f'<a href="collections/{collection}.html">{collection}</a> '
 
         html_content += """
-                </ul>
-            </section>
+                </p>
+            </footer>
             </main>
             <footer>
                 <p><a href="index.html">Retour à l'accueil</a></p>
