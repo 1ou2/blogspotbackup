@@ -7,6 +7,9 @@ import re, os, sys,argparse
 
 from dotenv import load_dotenv
 
+"""
+Get all posts urls from a blog page
+"""
 def get_urls(blog_url,max_pages):
     nextpage = blog_url
     allurls = set()
